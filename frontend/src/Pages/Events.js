@@ -3,7 +3,7 @@ import { Grid, CssBaseline } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import EventCard from "../Components/EventCard";
 import GetEvents from "../APIs/GetEvents";
-import GetUserData from "../APIs/GetUserData";
+import {GetUserData} from "../APIs/GetUserData";
 
 const useStyles = makeStyles((theme) => ({
   root: {

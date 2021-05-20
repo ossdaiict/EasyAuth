@@ -1,22 +1,21 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import clsx from "clsx";
-import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import CardActions from "@material-ui/core/CardActions";
-import Collapse from "@material-ui/core/Collapse";
 import Avatar from "@material-ui/core/Avatar";
 import IconButton from "@material-ui/core/IconButton";
 import Typography from "@material-ui/core/Typography";
 import { red } from "@material-ui/core/colors";
-import FavoriteIcon from "@material-ui/icons/Favorite";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 import FileCopyIcon from "@material-ui/icons/FileCopy";
 import GetAppIcon from "@material-ui/icons/GetApp";
+import TrendingFlatIcon from "@material-ui/icons/TrendingFlat";
 import moment from "moment";
-import { Button } from "@material-ui/core";
+import { Button, Paper } from "@material-ui/core";
+import { useHistory } from "react-router-dom";
 
 const useStyles = makeStyles((theme) => ({
   media: {
@@ -40,6 +39,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function EventCard({ event, onDownloadClick }) {
   const classes = useStyles();
+  const history = useHistory();
   const [expanded, setExpanded] = React.useState(false);
 
   const handleExpandClick = () => {
@@ -47,18 +47,21 @@ export default function EventCard({ event, onDownloadClick }) {
   };
 
   return (
-    <Card>
+    <Paper variant="outlined">
       <CardHeader
         avatar={
           <Avatar aria-label="recipe" className={classes.avatar}>
             {event.event_name[0]}
           </Avatar>
         }
-        // action={
-        //   <IconButton aria-label="settings">
-        //     <MoreVertIcon />
-        //   </IconButton>
-        // }
+        action={
+          <IconButton
+            aria-label="Go->"
+            onClick={() => history.push(`/users/${event._id}`)}
+          >
+            <TrendingFlatIcon />
+          </IconButton>
+        }
         title={event.event_name}
         subheader={moment(event.created_at).format("lll")}
       />
@@ -109,6 +112,6 @@ export default function EventCard({ event, onDownloadClick }) {
         </IconButton>
       </CardActions>
       {/* <Collapse in={expanded} timeout="auto" unmountOnExit></Collapse> */}
-    </Card>
+    </Paper>
   );
 }

@@ -21,7 +21,7 @@ const JWT_EXPIRY_DURATION = '6h';
 
 router.post('/register', async (req, res) => {
     // console.log(req.body);
-    const { password: plainUserPassword, email } = req.body;
+    const { password: plainUserPassword, email, username } = req.body;
     const token = req.header('Authorization').split(" ")[1];
     var event_id;
 
@@ -39,8 +39,10 @@ router.post('/register', async (req, res) => {
     const password = await bcrypt.hash(plainUserPassword, 10);
 
     if (!email || typeof (email) !== 'string') {
-        console.log("Error in email");
         return res.json({ status: "error", message: "Invalid Email" })
+    }
+    if (!username || typeof (username) !== 'string') {
+        return res.json({ status: "error", message: "Invalid Username" })
     }
     if (!plainUserPassword || typeof (plainUserPassword) !== 'string') {
         return res.json({ status: "error", message: "Invalid Password" })
@@ -56,7 +58,7 @@ router.post('/register', async (req, res) => {
     const data = {};
 
     for (const property in req.body) {
-        if (property != 'email' && property != 'password') {
+        if (property != 'email' && property != 'password' && property != 'username') {
             data[property] = req.body[property];
         }
     }
@@ -64,6 +66,7 @@ router.post('/register', async (req, res) => {
     try {
         const response = await User.create({
             email,
+            username,
             event_id,
             password,
             data

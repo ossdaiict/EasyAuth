@@ -8,9 +8,7 @@ import {UserProvider} from './Context/UserContext';
 ReactDOM.render(
 
   <UserProvider>
-    <React.StrictMode>
       <App />
-    </React.StrictMode>
   </UserProvider>,
   document.getElementById('root')
 );

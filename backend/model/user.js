@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: false },
+    username: { type: String, required: true, unique: false },
     event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'EventScema', required: true, unique: false },
     password: { type: String, required: true },
     verified: { type: Boolean, default: false },

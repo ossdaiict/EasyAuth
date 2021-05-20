@@ -7,14 +7,13 @@ const GetUserData = async function (id_token, eventId) {
     Authorization: `JWT ${id_token}`,
   };
 
-  const eventData = {
-    event_id: eventId,
-  };
+  console.log(eventId);
 
-  return Axios.post(`${API_URL}/api/event-creator/getUserData`, eventData, {
+  return Axios.get(`${API_URL}/api/event-creator/getUserDataAsCSV/${eventId}`, {
     headers: headerAuth,
   })
     .then((response) => {
+      console.log(response);
       return response;
     })
     .catch((err) => {
@@ -22,4 +21,18 @@ const GetUserData = async function (id_token, eventId) {
     });
 };
 
-export default GetUserData;
+const GetUserDataInTable = async function (event_id, page, count) {
+
+  let id_token = localStorage.getItem("auth_token");
+
+  const headerAuth = {
+    "Content-Type": "application/json",
+    Authorization: `JWT ${id_token}`,
+  };
+
+  return Axios.post(`${API_URL}/api/event-creator/getUserDataAsJSON?page=${page}&count=${count}`,{event_id},{
+    headers: headerAuth,
+  });
+};
+
+export { GetUserData, GetUserDataInTable };

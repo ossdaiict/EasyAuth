@@ -1,68 +1,68 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const converter = require('json-2-csv');
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const converter = require("json-2-csv");
 
-const EventCreator = require('../model/EventCreator');
-const Event = require('../model/Event');
-const User = require('../model/user');
+const EventCreator = require("../model/EventCreator");
+const Event = require("../model/Event");
+const User = require("../model/user");
 
 const JWT_SECRET = process.env.JWT_SECRET_EVENT;
-const JWT_EXPIRY_DURATION = '6h';
+const JWT_EXPIRY_DURATION = "6h";
 
-router.post('/register', (req, res) => {
-
-  const id_token = req.header('Authorization').split(" ")[1];
+router.post("/register", (req, res) => {
+  const id_token = req.header("Authorization").split(" ")[1];
   var decoded = jwt.decode(id_token);
   console.log(decoded);
 
   if (decoded == null) {
-    var resp = { 'status': 'err', 'message': 'Error while decoding Token' };
+    var resp = { status: "err", message: "Error while decoding Token" };
     return res.status(500).json(resp);
   }
 
-  if (decoded.email_verified === true && decoded.aud === process.env.GOOGLE_CLIENT_ID) {
-
+  if (
+    decoded.email_verified === true &&
+    decoded.aud === process.env.GOOGLE_CLIENT_ID
+  ) {
     EventCreator.findOne({ email: decoded.email }, (err, obj) => {
       if (err) {
-        return res.status(500).json({ 'status': 'err', 'message': err });
-      }
-      else {
+        return res.status(500).json({ status: "err", message: err });
+      } else {
         if (obj !== null) {
           console.log("Exist ", obj);
-          const token = jwt.sign({
-            id: obj._id,
-            email: obj.email
-          },
+          const token = jwt.sign(
+            {
+              id: obj._id,
+              email: obj.email,
+            },
             JWT_SECRET,
             { expiresIn: JWT_EXPIRY_DURATION }
           );
-          return res.status(202).json({ status: 'ok', data: token });
-        }
-        else {
-
+          return res.status(202).json({ status: "ok", data: token });
+        } else {
           var eventCreator = new EventCreator({
             _id: new mongoose.Types.ObjectId(),
             email: decoded.email,
-            username: decoded.name
-          })
+            username: decoded.name,
+          });
 
           eventCreator
             .save()
-            .then(result => {
+            .then((result) => {
               console.log(result);
-              const token = jwt.sign({
-                id: result._id,
-                email: result.email
-              },
+              const token = jwt.sign(
+                {
+                  id: result._id,
+                  email: result.email,
+                },
                 JWT_SECRET,
                 { expiresIn: JWT_EXPIRY_DURATION }
               );
-              return res.status(201).json({ status: 'ok', data: token });
+              return res.status(201).json({ status: "ok", data: token });
             })
-            .catch(err => {
-              return res.status(500).json({ 'status': 'err', 'message': err })
+            .catch((err) => {
+              return res.status(500).json({ status: "err", message: err });
             });
         }
       }
@@ -70,18 +70,20 @@ router.post('/register', (req, res) => {
   }
 });
 
-router.post('/create-event', (req, res) => {
-
+router.post("/create-event", (req, res) => {
   const { event_name } = req.body;
-  const jwt_token = req.header('Authorization').split(" ")[1];
+  const jwt_token = req.header("Authorization").split(" ")[1];
   try {
     const eventCreator = jwt.verify(jwt_token, JWT_SECRET);
     const eventid = new mongoose.Types.ObjectId();
 
-    const event_token = jwt.sign({
-      event_id: eventid,
-      creator_id: eventCreator.id,
-    }, JWT_SECRET);
+    const event_token = jwt.sign(
+      {
+        event_id: eventid,
+        creator_id: eventCreator.id,
+      },
+      JWT_SECRET
+    );
 
     const newEvent = new Event({
       _id: eventid,
@@ -90,38 +92,37 @@ router.post('/create-event', (req, res) => {
       token: event_token,
     });
 
-    newEvent.save()
-      .then(result => {
-        return res.json({ status: "ok", message: result })
+    newEvent
+      .save()
+      .then((result) => {
+        return res.json({ status: "ok", message: result });
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         res.json({ status: "error", message: err });
       });
-
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
-    return res.json({ status: error, message: "Token invalid or User does not exist" });
+    return res.json({
+      status: error,
+      message: "Token invalid or User does not exist",
+    });
   }
 });
 
-router.get('/events', (req, res) => {
-
-  const jwt_token = req.header('Authorization').split(" ")[1];
+router.get("/events", (req, res) => {
+  const jwt_token = req.header("Authorization").split(" ")[1];
 
   jwt.verify(jwt_token, JWT_SECRET, (err, eventCreator) => {
     if (err) {
       console.log(err);
       return res.status(403).json({ status: "error", message: err });
-    }
-    else {
+    } else {
       Event.find({ creator_id: eventCreator.id }, (error, objs) => {
         if (error) {
           console.error(error);
           res.status(500).json({ status: "error", message: error });
-        }
-        else {
+        } else {
           res.status(200).json({ length: objs.length, objects: objs });
         }
       });
@@ -129,56 +130,124 @@ router.get('/events', (req, res) => {
   });
 });
 
-router.post('/getUserData', (req, res) => {
-
-  const jwt_token = req.header('Authorization').split(" ")[1];
-  const { event_id } = req.body;
+router.get("/getUserDataAsCSV/:event_id", (req, res) => {
+  const jwt_token = req.header("Authorization").split(" ")[1];
+  const event_id = req.params["event_id"];
 
   jwt.verify(jwt_token, JWT_SECRET, (err, eventCreator) => {
     if (err) {
       console.log(err);
       return res.status(403).json({ status: "error", message: err });
-    }
-    else {
-      Event.findOne({ _id: event_id }).populate('creator_id').exec((err, obj) => {
-        if (err) {
-          console.log(err);
-          return res.status(500).json({ status: "error", message: err });
-        }
-        else {
-          if (obj !== null) {
-            if (obj.creator_id._id.toHexString() === eventCreator.id) {
-              User.find({ event_id }, "-_id -verified -password -createdAt -updatedAt -event_id -__v").lean().exec((error, objs) => {
-                if (error) {
-                  console.error(error);
-                  res.status(500).json({ status: "error", message: error });
-                }
-                else {
-                  console.log(objs);
+    } else {
+      Event.findOne({ _id: event_id })
+        .populate("creator_id")
+        .exec((err, obj) => {
+          if (err) {
+            console.log(err);
+            return res.status(500).json({ status: "error", message: err });
+          } else {
+            if (obj !== null) {
+              if (obj.creator_id._id.toHexString() === eventCreator.id) {
+                User.find(
+                  { event_id },
+                  "-_id -password -createdAt -updatedAt -event_id -__v"
+                )
+                  .lean()
+                  .exec((error, objs) => {
+                    if (error) {
+                      console.error(error);
+                      res.status(500).json({ status: "error", message: error });
+                    } else {
+                      console.log(objs);
 
-                  converter.json2csv(objs, (err, csv) => {
-                    if (err) {
-                      console.log(err);
-                      return res.json({ status: "error", message: "Error sending csv" });
+                      converter.json2csv(objs, (err, csv) => {
+                        if (err) {
+                          console.log(err);
+                          return res.json({
+                            status: "error",
+                            message: "Error sending csv",
+                          });
+                        }
+                        res.setHeader(
+                          "Content-disposition",
+                          "attachment; filename=user-data.csv"
+                        );
+                        res.set("Content-Type", "text/csv");
+                        return res.status(200).send(csv);
+                      });
                     }
-                    console.log(csv);
-                    res.setHeader('Content-Type', 'text/csv');
-                    res.attachment('data.csv');
-                    return res.send(csv);
-                  })
-
-                }
+                  });
+              } else {
+                res.status(404).json({
+                  status: "error",
+                  message: "You can not access data of this event",
+                });
+              }
+            } else {
+              res.status(500).json({
+                status: "error",
+                message: "Could not find any event with this ID",
               });
             }
-            else {
-              res.status(404).json({ status: "error", message: "You can not access data of this event" });
+          }
+        });
+    }
+  });
+});
+
+router.post("/getUserDataAsJson", (req, res) => {
+  const jwt_token = req.header("Authorization").split(" ")[1];
+  const { event_id } = req.body;
+  const { page, count } = req.query;
+
+  jwt.verify(jwt_token, JWT_SECRET, (err, eventCreator) => {
+    if (err) {
+      console.log(err);
+      return res.status(403).json({ status: "error", message: err });
+    } else {
+      Event.findOne({ _id: event_id })
+        .populate("creator_id")
+        .exec((err, obj) => {
+          if (err) {
+            console.log(err);
+            return res.status(500).json({ status: "error", message: err });
+          } else {
+            if (obj !== null) {
+              if (obj.creator_id._id.toHexString() === eventCreator.id) {
+                User.find(
+                  { event_id },
+                  "-_id -password -createdAt -updatedAt -event_id -__v",
+                  // { skip: count*(page-1), limit: parseInt(count), sort: {email: 1} } // for future pagination
+                  { sort: { username: 1 } }
+                )
+                  .lean()
+                  .exec((error, objs) => {
+                    if (error) {
+                      console.error(error);
+                      res.status(500).json({ status: "error", message: error });
+                    } else {
+                      let returnObj = {
+                        page: page - 0,
+                        count: objs.length,
+                        objs,
+                      };
+                      res.status(200).json(returnObj);
+                    }
+                  });
+              } else {
+                res.status(404).json({
+                  status: "error",
+                  message: "You can not access data of this event",
+                });
+              }
+            } else {
+              res.status(500).json({
+                status: "error",
+                message: "Could not find any event with this ID",
+              });
             }
           }
-          else {
-            res.status(500).json({ status: "error", message: "Could not find any event with this ID" });
-          }
-        }
-      });
+        });
     }
   });
 });

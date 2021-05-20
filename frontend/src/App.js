@@ -5,8 +5,8 @@ import { BrowserRouter, Route, Switch, Redirect } from "react-router-dom";
 import MenuAppBar from "./Components/MenuAppbar";
 import Admin from "./Pages/Admin";
 import Login from "./Pages/Login";
-import Events from "./Pages/Events";
-import CircularProgress from "@material-ui/core/CircularProgress";
+import Events from "./Pages/Events"
+import EventUsers from './Pages/EventUsers'
 
 function App() {
   var { isAuthenticated } = useUserState();
@@ -18,6 +18,7 @@ function App() {
         <Route exact path="/" render={() => <Redirect to="/admin" />} />
         <PrivateRoute path="/admin" component={Admin} />
         <PrivateRoute path="/events" component={Events} />
+        <PrivateRoute path="/users/:eventid" component={EventUsers} />
         <PublicRoute path="/login" component={Login} />
       </Switch>
     </BrowserRouter>

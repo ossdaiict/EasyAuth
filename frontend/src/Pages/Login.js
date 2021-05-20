@@ -79,6 +79,7 @@ export default function Login(props) {
             <GoogleLogin
                 className={classes.submit}
                 clientId={GOOGLE_CLIENT_ID}
+                hostedDomain="daiict.ac.in"
                 buttonText="Sign In with Google"
                 onSuccess={(response) => {
                     loginUser(userDispatch, props.history, response);
